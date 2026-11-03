@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: songs
-          image: kuber/songs-service:0.1.0
-          imagePullPolicy: Never
+          image: dimonkiev/songs-service:0.1.0
+          imagePullPolicy: IfNotPresent
           ports:
             - name: songs-api
               containerPort: 8081
