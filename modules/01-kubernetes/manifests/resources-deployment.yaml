@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resources
+  namespace: k8s-course
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resources
+  template:
+    metadata:
+      labels:
+        app: resources
+    spec:
+      containers:
+        - name: resources
+          image: dimonkiev/resources-service:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: resources-api
+              containerPort: 8080
+          env:
+            - name: RESOURCES_DB_URL
+              value: resources-db
+            - name: RESOURCES_DB_PORT
+              value: "5432"
+            - name: SONGS_MS_URL
+              value: songs
+            - name: SONGS_MS_PORT
+              value: "8081"
+            - name: ENABLE_EUREKA_CLIENT
+              value: "false"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+          readinessProbe:
+            tcpSocket:
+              port: resources-api
+            periodSeconds: 5
