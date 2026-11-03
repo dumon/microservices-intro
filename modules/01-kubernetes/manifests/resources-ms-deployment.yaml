@@ -1,32 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: resources
+  name: resources-ms
   namespace: k8s-course
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: resources
+      app: resources-ms
   template:
     metadata:
       labels:
-        app: resources
+        app: resources-ms
     spec:
       containers:
-        - name: resources
+        - name: resources-ms
           image: dimonkiev/resources-service:0.1.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: resources-api
               containerPort: 8080
           env:
+            - name: RESOURCES_MS_PORT
+              value: "8080"
             - name: RESOURCES_DB_URL
               value: resources-db
             - name: RESOURCES_DB_PORT
               value: "5432"
             - name: SONGS_MS_URL
-              value: songs
+              value: songs-ms
             - name: SONGS_MS_PORT
               value: "8081"
             - name: ENABLE_EUREKA_CLIENT
