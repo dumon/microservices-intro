@@ -35,3 +35,10 @@ spec:
             tcpSocket:
               port: songs-api # Resolves containers[].ports[].name to port 8081.
             periodSeconds: 5
+          volumeMounts:
+            - name: songs-data # Must match volumes[].name below.
+              mountPath: /data # The volume is accessible at this path inside the container.
+      volumes:
+        - name: songs-data
+          persistentVolumeClaim:
+            claimName: songs-ms-data # PVC metadata.name from songs-ms-pvc.yaml, in this namespace.
