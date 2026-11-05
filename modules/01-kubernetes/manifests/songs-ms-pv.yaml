@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: songs-ms-data-pv # Referenced by the PVC spec.volumeName.
+  # PersistentVolumes belong to the cluster, so metadata.namespace is not set.
+spec:
+  storageClassName: manual # Must match the PVC; storage is prepared statically.
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce # Multiple Pods may use this volume on the same node.
+  persistentVolumeReclaimPolicy: Retain # Keep the data when the claim is deleted.
+  hostPath:
+    path: /var/local/k8s-course/songs-ms # Path inside the Kubernetes node, not on host OS.
+    type: DirectoryOrCreate # Kubelet creates the directory when a Pod mounts the volume.
