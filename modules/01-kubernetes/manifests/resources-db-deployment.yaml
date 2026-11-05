@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: resources-db
+  name: resources-db # Deployment name; the container may have a different name (postgres).
   namespace: k8s-course
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: resources-db
+      app: resources-db # Must match template.metadata.labels.app below.
   template:
     metadata:
       labels:
-        app: resources-db
+        app: resources-db # The resources-db Service selects database Pods by this label.
     spec:
       containers:
         - name: postgres
           image: postgres:17
           ports:
-            - name: postgres
+            - name: postgres # Named container port referenced by the database Service targetPort.
               containerPort: 5432
           env:
             - name: POSTGRES_DB
@@ -31,9 +31,9 @@ spec:
               command: ["pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
             periodSeconds: 5
           volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
+            - name: data # References volumes[].name below.
+              mountPath: /var/lib/postgresql/data # Mounts the volume at this path inside the container.
       volumes:
-        # Temporary storage for this step; replaced with a PVC in the StatefulSet step.
+        # Temporary Pod storage, deleted with the Pod; replace with a PVC later.
         - name: data
           emptyDir: {}

@@ -1,37 +1,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: songs-ms
+  name: songs-ms # Deployment name; it may differ from the Service and container names.
   namespace: k8s-course
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: songs-ms
+      app: songs-ms # Must match template.metadata.labels.app below.
   template:
     metadata:
       labels:
-        app: songs-ms
+        app: songs-ms # Pod label used by the Deployment and Service selectors.
     spec:
       containers:
         - name: songs-ms
           image: dimonkiev/songs-service:0.1.0
           imagePullPolicy: IfNotPresent
           ports:
-            - name: songs-api
+            - name: songs-api # Referenced by the Service targetPort and readinessProbe.
               containerPort: 8081
           env:
             - name: SONGS_MS_PORT
-              value: "8081"
+              value: "8081" # Application listening port; keep it aligned with containerPort.
             - name: SONGS_DB_URL
-              value: songs-db
+              value: songs-db # Service metadata.name from songs-db-service.yaml.
             - name: SONGS_DB_PORT
-              value: "5432"
+              value: "5432" # Database Service port (spec.ports[].port).
             - name: ENABLE_EUREKA_CLIENT
               value: "false"
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: update
           readinessProbe:
             tcpSocket:
-              port: songs-api
+              port: songs-api # Resolves containers[].ports[].name to port 8081.
             periodSeconds: 5

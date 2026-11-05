@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: songs-db
+  name: songs-db # Service DNS name referenced by the application SONGS_DB_URL.
   namespace: k8s-course
 spec:
   type: ClusterIP
   selector:
-    app: songs-db
+    app: songs-db # Pod label from songs-db-deployment.yaml; the Deployment name is not used.
   ports:
-    - name: postgres
-      port: 5432
-      targetPort: postgres
+    - name: postgres # Service port name; it may differ from the container port name.
+      port: 5432 # The application connects to this port through SONGS_DB_PORT.
+      targetPort: postgres # Resolves the selected Pod container port named postgres -> 5432.
