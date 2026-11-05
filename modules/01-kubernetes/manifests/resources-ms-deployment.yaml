@@ -4,7 +4,7 @@ metadata:
   name: resources-ms # Deployment name; it may differ from the Service and container names.
   namespace: k8s-course
 spec:
-  replicas: 1
+  replicas: 2 # Desired Pod count; both replicas connect to the same database.
   selector:
     matchLabels:
       app: resources-ms # Must match template.metadata.labels.app below.
