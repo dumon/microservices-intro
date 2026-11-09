@@ -6,7 +6,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: resources-db # Pod label from resources-db-deployment.yaml; the Deployment name is not used.
+    app: resources-db # Selects database Pods by label; independent of their controller type or name.
   ports:
     - name: postgres # Service port name; it may differ from the container port name.
       port: 5432 # The application connects to this port through RESOURCES_DB_PORT.
