@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resources-ms # Deployment name; it may differ from the Service and container names.
+  namespace: k8s-course
+spec:
+  replicas: 2 # Desired Pod count; both replicas connect to the same database.
+  selector:
+    matchLabels:
+      app: resources-ms # Must match template.metadata.labels.app below.
+  template:
+    metadata:
+      labels:
+        app: resources-ms # Pod label used by the Deployment and Service selectors.
+    spec:
+      containers:
+        - name: resources-ms
+          image: dimonkiev/resources-service:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: resources-api # Referenced by the Service targetPort and readinessProbe.
+              containerPort: 8080
+          env:
+            - name: RESOURCES_MS_PORT
+              value: "8080" # Application listening port; keep it aligned with containerPort.
+            - name: RESOURCES_DB_URL
+              value: resources-db # Service metadata.name from resources-db-service.yaml.
+            - name: RESOURCES_DB_PORT
+              value: "5432" # Database Service port (spec.ports[].port).
+            - name: SONGS_MS_URL
+              value: songs-ms # Service DNS name from songs-ms-service.yaml, not a container name.
+            - name: SONGS_MS_PORT
+              value: "8081" # Internal Songs Service port; this connection does not use NodePort.
+            - name: ENABLE_EUREKA_CLIENT
+              value: "false"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+          readinessProbe:
+            tcpSocket:
+              port: resources-api # Resolves containers[].ports[].name to port 8080.
+            periodSeconds: 5

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: songs-db
+  namespace: k8s-course
+spec:
+  serviceName: songs-db # Reuses the existing ClusterIP Service; clients connect to songs-db:5432.
+  replicas: 1 # More replicas would not automatically configure PostgreSQL replication.
+  selector:
+    matchLabels:
+      app: songs-db # Must match template.metadata.labels.app below.
+  template:
+    metadata:
+      labels:
+        app: songs-db # Selected by the existing songs-db Service.
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+          ports:
+            - name: postgres # Referenced by the songs-db Service targetPort.
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data # Matches volumeClaimTemplates[].metadata.name below.
+              mountPath: /var/lib/postgresql/data # PostgreSQL 17 stores its database files here.
+  volumeClaimTemplates:
+    - metadata:
+        name: data # Creates PVC data-songs-db-0 for Pod songs-db-0.
+      spec:
+        storageClassName: hostpath # Existing StorageClass; its provisioner creates the PV.
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
