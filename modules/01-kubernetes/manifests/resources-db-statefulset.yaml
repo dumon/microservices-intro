@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: resources-db
+  namespace: k8s-course
+spec:
+  serviceName: resources-db # Reuses the existing ClusterIP Service; clients connect to resources-db:5432.
+  replicas: 1 # More replicas would not automatically configure PostgreSQL replication.
+  selector:
+    matchLabels:
+      app: resources-db # Must match template.metadata.labels.app below.
+  template:
+    metadata:
+      labels:
+        app: resources-db # Selected by the existing resources-db Service.
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+          ports:
+            - name: postgres # Referenced by the resources-db Service targetPort.
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data # Matches volumeClaimTemplates[].metadata.name below.
+              mountPath: /var/lib/postgresql/data # PostgreSQL 17 stores its database files here, including MP3 bytes.
+  volumeClaimTemplates:
+    - metadata:
+        name: data # Creates PVC data-resources-db-0 for Pod resources-db-0.
+      spec:
+        storageClassName: hostpath # Existing StorageClass; its provisioner creates a separate PV.
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

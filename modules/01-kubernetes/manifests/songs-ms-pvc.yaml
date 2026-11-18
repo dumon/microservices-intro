@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: songs-ms-data # The Songs Pod will reference this name through claimName.
+  namespace: k8s-course
+spec:
+  storageClassName: manual # Must match the PV storageClassName.
+  volumeName: songs-ms-data-pv # Explicitly selects the PV with this metadata.name.
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi # The selected PV must provide at least this capacity.

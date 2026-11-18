@@ -1,0 +1,5 @@
+# Only the executable JAR is needed in the Docker build context.
+**
+!build/
+!build/libs/
+!build/libs/*.jar
