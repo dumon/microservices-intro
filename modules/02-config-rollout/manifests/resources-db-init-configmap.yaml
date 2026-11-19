@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: resources-db-init
+  namespace: k8s-course
+data:
+  01-create-tables.sql: |
+    -- PostgreSQL runs this file only when its data directory is initialized.
+    -- SERIAL creates resources_id_seq and the id column's nextval default.
+    CREATE TABLE resources (
+        id serial NOT NULL,
+        blob bytea,
+        CONSTRAINT resources_pkey PRIMARY KEY (id)
+    );
