@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resources-ms # Deployment name; it may differ from the Service and container names.
+  namespace: k8s-course
+spec:
+  replicas: 2 # Desired Pod count; both replicas connect to the same database.
+  selector:
+    matchLabels:
+      app: resources-ms # Must match template.metadata.labels.app below.
+  template:
+    metadata:
+      labels:
+        app: resources-ms # Pod label used by the Deployment and Service selectors.
+    spec:
+      containers:
+        - name: resources-ms
+          image: dimonkiev/resources-service:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: resources-api # Referenced by the Service targetPort and readinessProbe.
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: resources-ms-config # Non-sensitive application settings.
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: resources-db-credentials
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resources-db-credentials
+                  key: password
+          readinessProbe:
+            tcpSocket:
+              port: resources-api # Resolves containers[].ports[].name to port 8080.
+            periodSeconds: 5
