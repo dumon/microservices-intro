@@ -17,6 +17,7 @@ data:
         name varchar(255),
         resource_id integer NOT NULL,
         year varchar(255),
+        genre varchar(255),
         CONSTRAINT songs_pkey PRIMARY KEY (id),
         CONSTRAINT uk_1wikoricwg7i63exh5rve2fql UNIQUE (resource_id)
     );
