@@ -5,6 +5,11 @@ metadata:
   namespace: k8s-course
 spec:
   replicas: 2 # Desired Pod count; both replicas connect to the same database.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # Start one replacement Pod before removing an old Pod.
+      maxUnavailable: 0 # Keep both replicas available during the update.
   selector:
     matchLabels:
       app: resources-ms # Must match template.metadata.labels.app below.
@@ -15,7 +20,7 @@ spec:
     spec:
       containers:
         - name: resources-ms
-          image: dimonkiev/resources-service:0.2.0
+          image: dimonkiev/resources-service:0.3.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: resources-api # Referenced by the Service targetPort and readinessProbe.
