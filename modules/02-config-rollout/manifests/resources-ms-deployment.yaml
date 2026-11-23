@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: resources-ms
-          image: dimonkiev/resources-service:0.1.0
+          image: dimonkiev/resources-service:0.2.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: resources-api # Referenced by the Service targetPort and readinessProbe.
@@ -34,7 +34,24 @@ spec:
                 secretKeyRef:
                   name: resources-db-credentials
                   key: password
-          readinessProbe:
-            tcpSocket:
-              port: resources-api # Resolves containers[].ports[].name to port 8080.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: resources-api
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 24 # Allow up to 120 seconds for Spring Boot startup.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: resources-api
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: resources-api
+            periodSeconds: 5
+            timeoutSeconds: 10 # Includes the database health indicator.
+            failureThreshold: 2

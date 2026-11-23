@@ -33,10 +33,24 @@ spec:
                 secretKeyRef:
                   name: resources-db-credentials
                   key: password
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30 # Allow up to 150 seconds for database recovery.
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           readinessProbe:
             exec:
               command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
           volumeMounts:
             - name: data # Matches volumeClaimTemplates[].metadata.name below.
               mountPath: /var/lib/postgresql/data # PostgreSQL 17 stores its database files here, including MP3 bytes.

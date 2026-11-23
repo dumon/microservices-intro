@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: songs-ms
-          image: dimonkiev/songs-service:0.1.0
+          image: dimonkiev/songs-service:0.2.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: songs-api # Referenced by the Service targetPort and readinessProbe.
@@ -34,10 +34,27 @@ spec:
                 secretKeyRef:
                   name: songs-db-credentials
                   key: password
-          readinessProbe:
-            tcpSocket:
-              port: songs-api # Resolves containers[].ports[].name to port 8081.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: songs-api
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 24 # Allow up to 120 seconds for Spring Boot startup.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: songs-api
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: songs-api
+            periodSeconds: 5
+            timeoutSeconds: 10 # Includes the database health indicator.
+            failureThreshold: 2
           volumeMounts:
             - name: songs-data # Must match volumes[].name below.
               mountPath: /data # The volume is accessible at this path inside the container.
