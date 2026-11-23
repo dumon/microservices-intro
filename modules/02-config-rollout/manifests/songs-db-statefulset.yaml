@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: songs-db
+  namespace: k8s-course
+spec:
+  serviceName: songs-db # Reuses the existing ClusterIP Service; clients connect to songs-db:5432.
+  replicas: 1 # More replicas would not automatically configure PostgreSQL replication.
+  selector:
+    matchLabels:
+      app: songs-db # Must match template.metadata.labels.app below.
+  template:
+    metadata:
+      labels:
+        app: songs-db # Selected by the existing songs-db Service.
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+          ports:
+            - name: postgres # Referenced by the songs-db Service targetPort.
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: songs-db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: songs-db-credentials
+                  key: password
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30 # Allow up to 150 seconds for database recovery.
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          volumeMounts:
+            - name: data # Matches volumeClaimTemplates[].metadata.name below.
+              mountPath: /var/lib/postgresql/data # PostgreSQL 17 stores its database files here.
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: init-sql
+          configMap:
+            name: songs-db-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data # Creates PVC data-songs-db-0 for Pod songs-db-0.
+      spec:
+        storageClassName: hostpath # Existing StorageClass; its provisioner creates the PV.
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

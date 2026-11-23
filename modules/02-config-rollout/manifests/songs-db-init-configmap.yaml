@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: songs-db-init
+  namespace: k8s-course
+data:
+  01-create-tables.sql: |
+    -- PostgreSQL runs this file only when its data directory is initialized.
+    -- Hibernate's default sequence allocation size is 50 for SongData.id.
+    CREATE SEQUENCE songs_seq AS bigint START WITH 1 INCREMENT BY 50;
+
+    CREATE TABLE songs (
+        id integer NOT NULL,
+        album varchar(255),
+        artist varchar(255),
+        length varchar(255),
+        name varchar(255),
+        resource_id integer NOT NULL,
+        year varchar(255),
+        genre varchar(255),
+        CONSTRAINT songs_pkey PRIMARY KEY (id),
+        CONSTRAINT uk_1wikoricwg7i63exh5rve2fql UNIQUE (resource_id)
+    );

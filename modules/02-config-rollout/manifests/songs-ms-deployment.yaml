@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: songs-ms # Deployment name; it may differ from the Service and container names.
+  namespace: k8s-course
+spec:
+  replicas: 2 # Desired Pod count; both replicas connect to the same database.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # Start one replacement Pod before removing an old Pod.
+      maxUnavailable: 0 # Keep both replicas available during the update.
+  selector:
+    matchLabels:
+      app: songs-ms # Must match template.metadata.labels.app below.
+  template:
+    metadata:
+      labels:
+        app: songs-ms # Pod label used by the Deployment and Service selectors.
+    spec:
+      containers:
+        - name: songs-ms
+          image: dimonkiev/songs-service:0.3.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: songs-api # Referenced by the Service targetPort and readinessProbe.
+              containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: songs-ms-config # Non-sensitive application settings.
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: songs-db-credentials
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: songs-db-credentials
+                  key: password
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: songs-api
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 24 # Allow up to 120 seconds for Spring Boot startup.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: songs-api
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: songs-api
+            periodSeconds: 5
+            timeoutSeconds: 10 # Includes the database health indicator.
+            failureThreshold: 2
+          volumeMounts:
+            - name: songs-data # Must match volumes[].name below.
+              mountPath: /data # The volume is accessible at this path inside the container.
+      volumes:
+        - name: songs-data
+          persistentVolumeClaim:
+            claimName: songs-ms-data # PVC metadata.name from songs-ms-pvc.yaml, in this namespace.

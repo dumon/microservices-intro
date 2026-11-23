@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resources-ms # Deployment name; it may differ from the Service and container names.
+  namespace: k8s-course
+spec:
+  replicas: 2 # Desired Pod count; both replicas connect to the same database.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # Start one replacement Pod before removing an old Pod.
+      maxUnavailable: 0 # Keep both replicas available during the update.
+  selector:
+    matchLabels:
+      app: resources-ms # Must match template.metadata.labels.app below.
+  template:
+    metadata:
+      labels:
+        app: resources-ms # Pod label used by the Deployment and Service selectors.
+    spec:
+      containers:
+        - name: resources-ms
+          image: dimonkiev/resources-service:0.3.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: resources-api # Referenced by the Service targetPort and readinessProbe.
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: resources-ms-config # Non-sensitive application settings.
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: resources-db-credentials
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resources-db-credentials
+                  key: password
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: resources-api
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 24 # Allow up to 120 seconds for Spring Boot startup.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: resources-api
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: resources-api
+            periodSeconds: 5
+            timeoutSeconds: 10 # Includes the database health indicator.
+            failureThreshold: 2
